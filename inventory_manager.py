@@ -1,8 +1,19 @@
-inventory = [
-    {"id": "P001", "name": "Laptop", "price": 1200.00, "stock": 15},
-    {"id": "P002", "name": "Mouse", "price": 25.50, "stock": 40},
-    {"id": "P003", "name": "Keyboard", "price": 45.00, "stock": 25},
-]
+import json
+import os
+
+FILENAME = "inventory.json"
+
+
+def load_inventory():
+    if os.path.exists(FILENAME):
+        print("inventory.json found.")
+        with open(FILENAME, "r") as f:
+            inventory = json.load(f)
+        print("Inventory loaded successfully.")
+        return inventory
+    else:
+        print("inventory.json not found. Starting with an empty inventory.")
+        return []
 
 
 def display_all(inventory):
@@ -57,6 +68,8 @@ def main():
     print("=" * 40)
     print("INVENTORY MANAGEMENT SYSTEM")
     print("=" * 40)
+
+    inventory = load_inventory()
 
     while True:
         print("\n----------- MENU -----------")
