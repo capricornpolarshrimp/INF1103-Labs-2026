@@ -1,4 +1,9 @@
-class Product:
+from abc import ABC, abstractmethod
+
+from can_be_shipped import CanBeShipped
+
+
+class Product(ABC):
     def __init__(self, product_id: str, name: str, price: float, stock: int):
         self.__product_id = product_id
         self.__name = name
@@ -25,10 +30,54 @@ class Product:
         print(f"Stock: {self.__stock}")
 
     def to_dict(self) -> dict:
-        # lets main.py save this product to JSON without touching private attributes
         return {
             "product_id": self.__product_id,
             "name": self.__name,
             "price": self.__price,
             "stock": self.__stock,
         }
+
+    @abstractmethod
+    def get_fulfilment_info(self) -> str:
+        pass
+
+
+class PhysicalProduct(Product, CanBeShipped):
+    def __init__(self, product_id: str, name: str, price: float, stock: int, weight: float):
+        super().__init__(product_id, name, price, stock)
+        self.__weight = weight
+
+    def display_information(self):
+        super().display_information()
+        print(f"Weight: {self.__weight} kg")
+
+    def get_fulfilment_info(self) -> str:
+        return "Physical product: requires packing and physical shipping."
+
+    def calculate_shipping_cost(self) -> float:
+        return 5.00 + 2.00 * self.__weight  # $5 base + $2 per kg
+
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "physical"
+        data["weight"] = self.__weight
+        return data
+
+
+class DigitalProduct(Product):
+    def __init__(self, product_id: str, name: str, price: float, stock: int, download_size: float):
+        super().__init__(product_id, name, price, stock)
+        self.__download_size = download_size
+
+    def display_information(self):
+        super().display_information()
+        print(f"Download Size: {self.__download_size} MB")
+
+    def get_fulfilment_info(self) -> str:
+        return "Digital product: delivered electronically via download link."
+
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["type"] = "digital"
+        data["download_size"] = self.__download_size
+        return data

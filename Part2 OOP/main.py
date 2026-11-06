@@ -1,6 +1,6 @@
 import json
 from inventory import Inventory
-from product import Product
+from product import PhysicalProduct, DigitalProduct
 
 FILENAME = "inventory.json"
 
@@ -13,20 +13,29 @@ def save_inventory(inventory: Inventory):
     print(f"Inventory saved to {FILENAME}.")
 
 
+def dict_to_product(item: dict):
+    # the "type" saved in the JSON decides which subclass to create
+    if item["type"] == "physical":
+        return PhysicalProduct(item["product_id"], item["name"], item["price"],
+                               item["stock"], item["weight"])
+    if item["type"] == "digital":
+        return DigitalProduct(item["product_id"], item["name"], item["price"],
+                              item["stock"], item["download_size"])
+    raise ValueError(f"Unknown product type: {item['type']}")
+
+
 def load_inventory(inventory: Inventory):
     try:
         with open(FILENAME, "r") as file:
             data = json.load(file)
         for item in data:
-            inventory.add_product(
-                Product(item["product_id"], item["name"], item["price"], item["stock"])
-            )
+            inventory.add_product(dict_to_product(item))
         print(f"Loaded {len(data)} product(s) from {FILENAME}.")
-    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+    except (FileNotFoundError, json.JSONDecodeError, KeyError, ValueError):
         print("No valid saved inventory found. Starting with default products.")
-        inventory.add_product(Product("P001", "Laptop", 1200.00, 15))
-        inventory.add_product(Product("P002", "Mouse", 25.50, 40))
-        inventory.add_product(Product("P003", "Wireless Keyboard", 45.00, 25))
+        inventory.add_product(PhysicalProduct("P001", "Laptop", 1200.00, 15, 2.1))
+        inventory.add_product(PhysicalProduct("P002", "Mouse", 25.50, 40, 0.1))
+        inventory.add_product(DigitalProduct("P003", "Photo Editor Software", 79.99, 100, 850.0))
 
 
 # ---------- Menu / UI ----------
@@ -49,18 +58,32 @@ def main():
             inventory.display_all()
 
         elif choice == "2":
+            product_type = input("Product type (1 = Physical, 2 = Digital): ").strip()
+            if product_type not in ("1", "2"):
+                print("Invalid product type.")
+                continue
             product_id = input("Product ID: ").strip()
             name = input("Name: ").strip()
             try:
                 price = float(input("Price: "))
                 stock = int(input("Stock: "))
+                if product_type == "1":
+                    extra = float(input("Weight (kg): "))
+                else:
+                    extra = float(input("Download size (MB): "))
             except ValueError:
-                print("Invalid price or stock. Product not added.")
+                print("Invalid number entered. Product not added.")
                 continue
-            if price < 0 or stock < 0:
-                print("Price and stock cannot be negative.")
+            if price < 0 or stock < 0 or extra < 0:
+                print("Values cannot be negative.")
                 continue
-            if inventory.add_product(Product(product_id, name, price, stock)):
+
+            if product_type == "1":
+                product = PhysicalProduct(product_id, name, price, stock, extra)
+            else:
+                product = DigitalProduct(product_id, name, price, stock, extra)
+
+            if inventory.add_product(product):
                 print(f"Product '{name}' added.")
             else:
                 print(f"A product with ID '{product_id}' already exists.")
@@ -95,4 +118,5 @@ def main():
             print("Invalid option.")
 
 
-main()
+if __name__ == "__main__":
+    main()
